@@ -1,3 +1,4 @@
+const path = require('path');
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
@@ -16,7 +17,9 @@ app.use(express.static(__dirname));
 
 // send the user to index html page inspite of the url
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'index.html'));
+    console.log('__dirname' + __dirname)
+    console.log('Path: ' + path.resolve(__dirname, 'dist/index.html'));  
+  res.sendFile(path.resolve(__dirname, 'dist/index.html'));
 });
 
 //var httpServer = http.createServer(app);
