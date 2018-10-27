@@ -1,10 +1,11 @@
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
+var caKeys = [fs.readFileSync('./certs/ca.crt'), ];
 var privateKey  = fs.readFileSync('./certs/server.key', 'utf8');
 var certificate = fs.readFileSync('./certs/server.crt', 'utf8');
 
-var credentials = {key: privateKey, cert: certificate};
+var credentials = {ca: caKeys, key: privateKey, cert: certificate};
 var express = require('express');
 var app = express();
 
@@ -22,5 +23,5 @@ app.get('*', (req, res) => {
 var httpsServer = https.createServer(credentials, app);
 
 //httpServer.listen(8080);
-httpsServer.listen(8443, '127.0.0.1');
-console.log('Node server running on port 8443 over https');  
+httpsServer.listen(8000);
+console.log('Node server running on port 8000 over https');  
