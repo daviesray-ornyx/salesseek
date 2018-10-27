@@ -2,9 +2,9 @@ const path = require('path');
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
-var caKeys = [fs.readFileSync('./certs/ca.crt'), ];
-var privateKey  = fs.readFileSync('./certs/server.key', 'utf8');
-var certificate = fs.readFileSync('./certs/server.crt', 'utf8');
+var caKeys = fs.readFileSync(path.resolve(__dirname,'certs/ca.crt'), 'utf8');
+var privateKey  = fs.readFileSync(path.resolve(__dirname,'certs/server.key'), 'utf8');
+var certificate = fs.readFileSync(path.resolve(__dirname,'certs/server.crt'), 'utf8');
 
 var credentials = {ca: caKeys, key: privateKey, cert: certificate};
 var express = require('express');
@@ -19,7 +19,7 @@ app.use(express.static(__dirname));
 app.get('*', (req, res) => {
     console.log('__dirname' + __dirname)
     console.log('Path: ' + path.resolve(__dirname, 'dist/index.html'));  
-  res.sendFile(path.resolve(__dirname, 'dist/index.html'));
+    res.sendFile(path.resolve(__dirname, 'dist/index.html'));
 });
 
 //var httpServer = http.createServer(app);
