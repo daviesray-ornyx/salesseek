@@ -138,7 +138,6 @@
             },
             dataType: 'json',
             success: function(data, textStatus, request) {
-                $('#log-message').text("Final success");
 
                 // Check if result has type individual
                 
