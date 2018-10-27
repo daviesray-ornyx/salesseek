@@ -114,14 +114,23 @@ input[type="text"]:focus, input[type="password"]:focus{background-color: rgba(25
 
 ._Header_j9b91_1 {
     padding: 24px;
-    text-align: center;
+    padding-left: 4px;
+    text-align: left;
+    display: table;
 }
 
 ._logo_j9b91_4 {
     position: relative;
-    margin: 0 auto;
+    margin-left: 0;
     width: 100px;
     height: 100px;
+    display: table-cell;
+}
+
+._logo_j9b91_4_right{
+    display: table-cell;
+    padding-left: 10px;
+    padding-top: 3px;
 }
 
 ._logoPlaceholder_j9b91_9 {
@@ -139,6 +148,8 @@ input[type="text"]:focus, input[type="password"]:focus{background-color: rgba(25
     background-position: center center;
     background-size: cover;
     background-repeat: no-repeat;
+    height: 90px;
+    width: 90px;
 }   
 
 ._Header_j9b91_1 ._logoPlaceholderIcon_j9b91_23 {
@@ -148,8 +159,9 @@ input[type="text"]:focus, input[type="password"]:focus{background-color: rgba(25
 }
 
 ._Header_j9b91_1 ._name_j9b91_27 {
-    margin: 20px 0 0;
+    margin: 13px 0 0;
     font-size: 20px;
+    color: #0a97ff;
 }
 
 h1, h2, h3 {
@@ -208,7 +220,7 @@ h1, h2, h3 {
 
 ._FieldContainer_13z8k_1 ._box_13z8k_4 ._label_13z8k_8 {
     display: table-cell;
-    width: 35%;
+    width: 90px!important;
     padding: 0 10px 0 0;
     overflow: hidden;
     white-space: nowrap;
