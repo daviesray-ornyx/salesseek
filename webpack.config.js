@@ -34,5 +34,9 @@ module.exports = {
             filename: 'function-file/function-file.html',
             chunks: ['function-file']
         })
-    ]
+    ],
+    devServer: {
+        compress: true,
+        disableHostCheck: true,   // That solved it
+      }
 };
