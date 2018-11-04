@@ -68,7 +68,7 @@
   })
 
   function logout(){
-        setItem.clear();
+        _store.clear();
         $('.page-div').addClass('hidden')
         $('#div-authentication-details').removeClass('hidden');
   }
@@ -565,7 +565,7 @@
 
                 ready_data = JSON.stringify({
                     "note": _emailBody,
-                    "activity_type" : "note",
+                    "activity_type" : "email",
                     "individual_id" : _individualId,
                     "owner_id" : _loggedInUId,
                     "creator_id": _loggedInUId,
