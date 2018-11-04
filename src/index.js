@@ -551,6 +551,8 @@
         
         var _senderEmail = currentMailItem.from.emailAddress;
         var _senderName = currentMailItem.from.displayName;
+
+        var _emailSubject = currentMailItem.subject;
         
         var _isIncoming = _senderEmail != "";
         var _emailBody = "";
@@ -565,11 +567,16 @@
 
                 ready_data = JSON.stringify({
                     "note": _emailBody,
-                    "activity_type" : "email",
+                    "activity_type" : "archive:email",
                     "individual_id" : _individualId,
                     "owner_id" : _loggedInUId,
                     "creator_id": _loggedInUId,
-                    "created" : dateString
+                    "created" : dateString,
+                    "params": {
+                        "attachment_names": [],
+                        "attachment_ids": [],
+                        "subject": _emailSubject
+                    }
                 });
 
                 //---- End  Ready data
