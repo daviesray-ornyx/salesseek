@@ -29,7 +29,7 @@
 </head>
 
 <body class="ms-font-m ms-welcome">
-    <div class="ms-Fabric content-main ">
+    <div class="ms-Fabric content-main ">        
         <div id="div-authentication-details" class="hidden page-div">
             <h3 class="ms-font-xl">Login</h3>   
             <section class="detail-section detail-main-info">
@@ -72,6 +72,9 @@
             </section>
         </div>
         <div id="div-organization-details" class="hidden page-div">
+            <div class="alert">
+                <p id="content-email-status" class="" style="width: 100%; text-align:center;"></p>
+            </div>
             <section class="_Header_j9b91_1" style="margin-bottom: 0px;padding-bottom: 0px;">
                 <div class="_logo_j9b91_4">
                     <div class="_logoPlaceholder_j9b91_9">
@@ -188,6 +191,8 @@
 
     <script type="text/javascript" src="node_modules/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="node_modules/office-ui-fabric-js/dist/js/fabric.js"></script>
+    <script src="//cdn.jsdelivr.net/bluebird/3.5.0/bluebird.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fetch/3.0.0/fetch.js"></script>
 
     <!--[if lte IE 9]>
     <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/jquery-ajaxtransport-xdomainrequest/1.0.3/jquery.xdomainrequest.min.js'></script>

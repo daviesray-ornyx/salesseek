@@ -26,5 +26,5 @@ app.get('*', (req, res) => {
 var httpsServer = https.createServer(credentials, app);
 
 //httpServer.listen(8080);
-httpsServer.listen(process.env.PORT ||8000, '0.0.0.0');
+httpsServer.listen(process.env.PORT ||3000, '0.0.0.0');
 console.log("Node server running on port "+ process.env.PORT +" over https");  

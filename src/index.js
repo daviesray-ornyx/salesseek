@@ -1,29 +1,47 @@
 'use strict';
 
+
 (function () {
 
+    var _store = window.localStorage;
     var email;
     var password;
     var client_id;
     var client_url;
-    var _settings;
+    // Logged in sales seek details
+    var _loggedInUId;
     var currentMailItem;
+
+    var _individualId; // Id of currently retrieved individual
+    var _individualRole = "";
+    var _individualOrganizationName = "";
+    var _individual_org_websites = "";
+    var _individual_org_emails = "";
+    var _individual_org_phones = "";
+    var _individual_org_linkedin = "";
+    var _individual_org_twitter = "";
+    var _individual_org_facebook = "";
+
+    var ready_data;
     var re_email = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/ ;
   // The initialize function must be run each time a new page is loaded
   Office.initialize = function (reason) {
     $(document).ready(function () {
-        _settings = Office.context.roamingSettings;
         currentMailItem = Office.context.mailbox.item;  
-        $('.content-sender-display-name').text(Office.context.mailbox.item.from.displayName);
+
+        $('.content-sender-display-name').text(Office.context.mailbox.item.from.displayName || Office.context.mailbox.item.from.displayName + ", Email: " + Office.context.mailbox.item.from.emailAddress || currentMailItem.to.emailAddress);
         
         // logout
-
+        //logout();
         // Check if settings exist
-        if(_settings.get("user_email")){
+        email = _store.getItem('user_email');
+        password = _store.getItem('user_password');
+        client_id = _store.getItem('user_client_id');
+        if(email && password && client_id){
             // Get user details
-            email = _settings.get("user_email");
-            password = _settings.get("user_password");
-            client_id = _settings.get("user_client_id");
+            // email = "daviesray.ornyx@gmail.com" //_settings.get("user_email");
+            // password = "Ornyxoft123$" //_settings.get("user_password");
+            // client_id = "daviesons" //_settings.get("user_client_id");
             client_url = 'https://' + client_id + ".salesseek.net/api";
             login(client_id, email, password, client_url);
         }else{
@@ -31,7 +49,7 @@
             $('.page-div').addClass('hidden')
             $('#div-authentication-details').removeClass('hidden');
         }
-        
+
     });
   };
 
@@ -50,10 +68,9 @@
   })
 
   function logout(){
-    _settings.remove("user_email");
-    _settings.remove("user_password");
-    _settings.remove("user_client_id");
-    _settings.saveAsync(saveAppCredentialsSettingsCallback);
+        setItem.clear();
+        $('.page-div').addClass('hidden')
+        $('#div-authentication-details').removeClass('hidden');
   }
 
   function login(client_id, p_email, p_password, p_client_url){
@@ -62,23 +79,22 @@
         {
         type: 'POST',
         url: p_client_url + '/login',
-        crossDomain: true,
-        xhrFields: {
-            withCredentials: true
-        },
+        xhrFields: { withCredentials: true },
         data: {
             email_address: p_email,
             password: p_password
         },
         dataType: 'json',
-        success: function(data, textStatus, request) {
+        success: function(data, textStatus, xhr) {
             // Store details to roaming settings
-            _settings.set("user_email", p_email);
-            _settings.set("user_password", p_password);
-            _settings.set("user_client_id", client_id);
-            _settings.saveAsync(saveAppCredentialsSettingsCallback);  
+            _store.setItem("user_email", p_email);
+            _store.setItem("user_password", p_password);
+            _store.setItem("user_client_id", client_id);
+            _loggedInUId = data.id;
+            // Set coockie
+            searchByEmail(Office.context.mailbox.item.from.emailAddress || currentMailItem.to.emailAddress);
         },
-        error: function() {
+        error: function(error, status, xhr) {
             // Remove submitting messaging
             showAlert('error', "Login error. Check your credentials and try agaon.", 5000, '#div-authentication-details');
             $('#log-message').text(error.responseJSON.detail + ", StatusCode: " + error.status + ", headers: " + error.getAllResponseHeaders);
@@ -87,14 +103,6 @@
 
   }
 
-  function saveAppCredentialsSettingsCallback(asyncResult) {
-    if (asyncResult.status == Office.AsyncResultStatus.Failed) {
-        // Handle the failure.
-        
-    }else{
-        searchByEmail(Office.context.mailbox.item.from.emailAddress)
-    }
-}
 
   function validateLoginForm(){
       var validated = true;
@@ -129,16 +137,9 @@
             type: 'GET',
             url: client_url + '/search?terms=' + email_address,
             crossDomain: true,
-            xhrFields: {
-                withCredentials: true
-            },
-            data: {
-                email_address: email,
-                password: password
-            },
+            xhrFields: { withCredentials: true },
             dataType: 'json',
             success: function(data, textStatus, request) {
-
                 // Check if result has type individual
                 
                 if(data.batch_size > 0){
@@ -149,49 +150,49 @@
                     $.each(data.results, function(index, result){
                         $('#log-message').text("Iterations: Result.type: " + result.type);
                         if(result.type == "salesseek.contacts.models.individual.Individual"){ 
-                            // Individual found... We only process the first matching for the moment
+                            /* Start of old implementation if individual found */
+                            // // Individual found... We only process the first matching for the moment
                             individual_found = true;
-                            // Process individual details
-                            $('#content-organization-name').text(result.item.organization.name);
-                            $('#content-organization-role').text(result.item.role);
-                            // Communication details
-                            var org_websites = "";
-                            var org_emails = "";
-                            var org_phones = "";
-                            var org_linkedin = "";
-                            var org_twitter = "";
-                            var org_facebook = "";
-                            // var org_googleplus = "";
+                            
+                            /* End of old implementation if individual found */
+
+                            /* Begining of new implementation */
+                            // Task is to compose email and send to Salesseek
+
+                            // Get user id and organization details=================================
+                            _individualId = result.item.id;
+                            _individualRole = result.item.role
+                            _individualOrganizationName = result.item.organization.name;
                             $.each(result.item.organization.communication, function(commIndex, comm){
                                 if(comm.name == "website"){
-                                    if(org_websites != "")
-                                        org_websites += ", ";
-                                    org_websites += comm.value;
+                                    if(_individual_org_websites != "")
+                                        _individual_org_websites += ", ";
+                                    _individual_org_websites += comm.value;
                                 }
                                 else if(comm.name == "phone"){
-                                    if(org_phones != "")
-                                    org_phones += ", ";
-                                    org_phones += comm.value;
+                                    if(_individual_org_emails != "")
+                                        _individual_org_emails += ", ";
+                                        _individual_org_emails += comm.value;
                                 }
                                 else if(comm.name == "email"){
-                                    if(org_emails != "")
-                                    org_emails += ", ";
-                                    org_emails += comm.value;
+                                    if(_individual_org_phones != "")
+                                        _individual_org_phones += ", ";
+                                        _individual_org_phones += comm.value;
                                 }
                                 else if(comm.name == "linkedin"){
-                                    if(org_linkedin != "")
-                                    org_linkedin += ", ";
-                                    org_linkedin += comm.value;
+                                    if(_individual_org_linkedin != "")
+                                        _individual_org_linkedin += ", ";
+                                    _individual_org_linkedin += comm.value;
                                 }
                                 else if(comm.name == "twitter"){
-                                    if(org_twitter != "")
-                                    org_twitter += ", ";
-                                    org_twitter += comm.value;
+                                    if(_individual_org_twitter != "")
+                                        _individual_org_twitter += ", ";
+                                    _individual_org_twitter += comm.value;
                                 }
                                 else if(comm.name == "facebook"){
-                                    if(org_facebook != "")
-                                    org_facebook += ", ";
-                                    org_facebook += comm.value;
+                                    if(_individual_org_facebook != "")
+                                        _individual_org_facebook += ", ";
+                                        _individual_org_facebook += comm.value;
                                 }
                                 // else if(comm.name == "googleplus"){
                                 //     if(org_googleplus != "")
@@ -199,57 +200,10 @@
                                 //     org_googleplus += comm.value;
                                 // }
                             });
+                            
+                            
 
-                            // Add values Responsibly...
-                            $('#content-organization-website').text(org_websites);
-
-                            // Adding email
-                            $('._value_v0gc7_56.email').text(org_emails);
-                            $('._value_v0gc7_56.email').attr('href', "mailto:" + org_emails);
-                            if(org_emails == "")
-                                $('._value_v0gc7_56.email').closest('._FieldContainer_13z8k_1').addClass('hidden');
-                            else
-                                $('._value_v0gc7_56.email').closest('._FieldContainer_13z8k_1').removeClass('hidden');
-
-                            // Adding phone
-                            $('._value_v0gc7_56.phone').text(org_phones);
-                            $('._value_v0gc7_56.phone').attr('href', "tel:" + org_phones);
-                            if(org_phones == "")
-                                $('._value_v0gc7_56.phone').closest('._FieldContainer_13z8k_1').addClass('hidden');
-                            else
-                                $('._value_v0gc7_56.phone').closest('._FieldContainer_13z8k_1').removeClass('hidden');
-
-                            // Adding organization name
-                            $('#log-message').text("Organization: " + result.item.organization.name);
-
-                            // Adding Twiter
-                            $('._value_v0gc7_56.twitter').text("@" + org_twitter);
-                            $('._value_v0gc7_56.twitter').attr('href', "https://twitter.com/" + org_twitter);
-                            if(org_twitter == "")
-                                $('._value_v0gc7_56.twitter').closest('._FieldContainer_13z8k_1').addClass('hidden');
-                            else
-                                $('._value_v0gc7_56.twitter').closest('._FieldContainer_13z8k_1').removeClass('hidden');
-
-                            // Adding Facebook
-                            $('._value_v0gc7_56.facebook').text(org_facebook);
-                            $('._value_v0gc7_56.facebook').attr('href', org_facebook);
-                            if(org_facebook == "")
-                                $('._value_v0gc7_56.facebook').closest('._FieldContainer_13z8k_1').addClass('hidden');
-                            else
-                                $('._value_v0gc7_56.facebook').closest('._FieldContainer_13z8k_1').removeClass('hidden');
-
-                            // Adding LinkedIn
-                            $('._value_v0gc7_56.linkedin').text(org_linkedin);
-                            $('._value_v0gc7_56.linkedin').attr('href', org_linkedin);
-                            if(org_linkedin == "")
-                                $('._value_v0gc7_56.linkedin').closest('._FieldContainer_13z8k_1').addClass('hidden');
-                            else
-                                $('._value_v0gc7_56.linkedin').closest('._FieldContainer_13z8k_1').removeClass('hidden');
-
-                            // Hide addition section
-                            // Show organization section
-                            $('#div-organization-details').removeClass('hidden');
-                            $('#div-add-user-to-crm').addClass('hidden');
+                            getEmailDetails();
                         }
                     })
                     if(!individual_found){
@@ -421,7 +375,7 @@
   }
 
   $('#btn-save-individual').click(function(event){
-
+        event.preventDefault();
         // Trying to save a user
         if(!validateAddIndividualForm())
             return;
@@ -462,13 +416,14 @@
             // Add user to existing organization
             createUserAndAddToOrganization($('#field-select-organization').val());
         }
+        
   });
 
   function createUserAndAddToOrganization(organization_id){
         // Get user details..
         var firstName = $('#field-first-name').val();
         var lastName = $('#field-last-name').val();
-        var email_address = currentMailItem.from.emailAddress;
+        var email_address = currentMailItem.from.emailAddress || currentMailItem.from.emailAddress;
         var role = $('#field-role').val();
         var data = JSON.stringify({
             "first_name": firstName,
@@ -506,9 +461,9 @@
                 $('#loading-gif-alt').removeClass('hidden');
                 $('#div-add-user-to-crm .detail-section').attr('disabled', false);
 
-                $('#div-add-user-to-crm  .alert-message').text(currentMailItem.from.displayName + " successfully added to SalesSleek.");
+                $('#div-add-user-to-crm  .alert-message').text(currentMailItem.from.displayName || currentMailItem.to.displayName  + " successfully added to SalesSleek.");
 
-                showAlert('success', currentMailItem.from.displayName + " successfully added to SalesSleek.", 2000, '#div-add-user-to-crm', searchByEmail(currentMailItem.from.emailAddress));
+                showAlert('success', currentMailItem.from.displayName || currentMailItem.to.displayName + " successfully added to SalesSleek.", 2000, '#div-add-user-to-crm', searchByEmail(currentMailItem.from.emailAddress || currentMailItem.to.emailAddress));
             },
             error: function() {
                 // Remove submitting messaging
@@ -516,11 +471,11 @@
                 $('#loading-gif-alt').removeClass('hidden');
                 $('#div-add-user-to-crm .detail-section').attr('disabled', false);
 
-                showAlert('error', "Could not add " + currentMailItem.from.displayName + " to SalesSleek. Please try again or contact system administrator.", 5000, '#div-add-user-to-crm');
+                showAlert('error', "Could not add " + currentMailItem.from.displayName || currentMailItem.to.displayName + " to SalesSleek. Please try again or contact system administrator.", 5000, '#div-add-user-to-crm');
             }
         });
 
-    }
+  }
 
     function showAlert(type, message, displayTime, alertSectionId, callback){
         if(type == "error")
@@ -537,5 +492,195 @@
         }, displayTime);
     }
 
+    function emailInSalesSeekCheck(date_created, body){
+        // Check if matching detail is in salesseek
+        
+        $.ajax(
+            {
+                type: 'GET',
+                url: client_url + "/individuals/" + _individualId + "/activities",
+                crossDomain: true,
+                xhrFields: { withCredentials: true },
+                dataType: 'json',
+                success: function(data, textStatus, request) {
+                    // Check if result has type individual
+                    var inSalesSeek = false;
+                    var text_vals = "";
+                    $.each(data, function(index, activity){
+                        // Check if date difference is greater than 2 seconds
+                        var currentEmailDate = new Date(date_created);
+                        var retrievedEmailDate = new Date(activity.created)
+                        var timeDifferenceInSeconds = Math.abs((currentEmailDate.getTime() - retrievedEmailDate.getTime()) / 1000);
+                        
+                        // if(timeDifferenceInSeconds < 5 && _loggedInUId == activity.creator_id){
+                        if(body == activity.note && _loggedInUId == activity.creator_id){
+                            inSalesSeek = true;
+                            return true;
+                        }
+
+                        // If the above 2 match, don't add to sales seek!!
+                    })
+
+                    if(inSalesSeek){
+                        // Display org with message that this is in sales seek
+                        displayInSalesSeekPage(false); // False for not added
+
+                    }else{
+                        // Add to sales Seek
+                        sendEmailToSalesSeek();
+                    }
+
+                    return inSalesSeek
+                },
+                error: function() {
+                    // Remove submitting messaging
+                    $('#log-message').text("Error");
+                    $('#log-message').text(error.responseJSON.detail + ", StatusCode: " + error.status + ", headers: " + error.getAllResponseHeaders);
+                }
+            }
+        );
+    }
+
+    function getEmailDetails(){
+        var dateTimeCreated = currentMailItem.dateTimeCreated;
+        var parsedDate = new Date(dateTimeCreated);
+        var dateString = parsedDate.toISOString();
+
+        var _receiverEmail = currentMailItem.to.emailAddress;
+        var _receiverName = currentMailItem.to.displayName;
+        
+        var _senderEmail = currentMailItem.from.emailAddress;
+        var _senderName = currentMailItem.from.displayName;
+        
+        var _isIncoming = _senderEmail != "";
+        var _emailBody = "";
+        // Email body
+        currentMailItem.body.getAsync(Office.CoercionType.Text, 
+            function (result) {
+                if(!result.error){
+                    // alert message. Error retrieving mail body
+                    _emailBody = result.value;
+                }
+                // Ready data start
+
+                ready_data = JSON.stringify({
+                    "note": _emailBody,
+                    "activity_type" : "note",
+                    "individual_id" : _individualId,
+                    "owner_id" : _loggedInUId,
+                    "creator_id": _loggedInUId,
+                    "created" : dateString
+                });
+
+                //---- End  Ready data
+
+                // Check if email in salesSeek
+                emailInSalesSeekCheck(dateString, _emailBody);
+            }
+        )
+        
+    }
+
+    function makeBaseAuth(user, pswd){ 
+        var token = user + ':' + pswd;
+        var hash = "";
+        if (btoa) {
+           hash = btoa(token);
+        }
+        return "Basic " + hash;
+    }
+
+    function sendEmailToSalesSeek(){
+        //send ajax
+        $.ajax(
+        {
+            type: 'POST',
+            url: client_url + '/individuals/' + _individualId + '/activities',
+            crossDomain: true,
+            xhrFields: { withCredentials: true },
+            data: ready_data,
+            dataType: 'json',
+            success: function(data, textStatus, request) {
+                // Display alert... Email sent successfully.
+                displayInSalesSeekPage(true);
+            },
+            error: function(data, status, err) {
+                // Error saving email
+                $('#content-organization-name').text(JSON.stringify(data));
+                //$('#content-organization-name').text(JSON.stringify(data) + data.getAllResponseHeaders + email + "--- " + password + "err: " + err);
+                // https://apptuned.salesseek.net/api/individuals/7668eaa0-441c-4dc1-9f16-acdd732d4ef6/activities
+            }
+        });
+    }
+
+    function displayInSalesSeekPage(added){
+        // Show relevant div
+        $('.page-div').addClass("hidden");
+        $('#div-organization-details').removeClass('hidden');
+        
+        // // Process individual details
+        $('#content-organization-name').text(_individualOrganizationName);
+        $('#content-organization-role').text(_individualRole);
+
+        // Communication details
+        
+
+        // Add values Responsibly...
+        $('#content-organization-website').text(_individual_org_websites);
+
+        // Adding email
+        $('._value_v0gc7_56.email').text(_individual_org_emails);
+        $('._value_v0gc7_56.email').attr('href', "mailto:" + _individual_org_emails);
+        if(_individual_org_emails == "")
+            $('._value_v0gc7_56.email').closest('._FieldContainer_13z8k_1').addClass('hidden');
+        else
+            $('._value_v0gc7_56.email').closest('._FieldContainer_13z8k_1').removeClass('hidden');
+
+        // Adding phone
+        $('._value_v0gc7_56.phone').text(_individual_org_phones);
+        $('._value_v0gc7_56.phone').attr('href', "tel:" + _individual_org_phones);
+        if(_individual_org_phones == "")
+            $('._value_v0gc7_56.phone').closest('._FieldContainer_13z8k_1').addClass('hidden');
+        else
+            $('._value_v0gc7_56.phone').closest('._FieldContainer_13z8k_1').removeClass('hidden');
+
+        // Adding organization name
+        $('#log-message').text("Organization: " + _individualOrganizationName);
+
+        // Adding Twiter
+        $('._value_v0gc7_56.twitter').text("@" + _individual_org_twitter);
+        $('._value_v0gc7_56.twitter').attr('href', "https://twitter.com/" + _individual_org_twitter);
+        if(_individual_org_twitter == "")
+            $('._value_v0gc7_56.twitter').closest('._FieldContainer_13z8k_1').addClass('hidden');
+        else
+            $('._value_v0gc7_56.twitter').closest('._FieldContainer_13z8k_1').removeClass('hidden');
+
+        // Adding Facebook
+        $('._value_v0gc7_56.facebook').text(_individual_org_facebook);
+        $('._value_v0gc7_56.facebook').attr('href', _individual_org_facebook);
+        if(_individual_org_facebook == "")
+            $('._value_v0gc7_56.facebook').closest('._FieldContainer_13z8k_1').addClass('hidden');
+        else
+            $('._value_v0gc7_56.facebook').closest('._FieldContainer_13z8k_1').removeClass('hidden');
+
+        // Adding LinkedIn
+        $('._value_v0gc7_56.linkedin').text(_individual_org_linkedin);
+        $('._value_v0gc7_56.linkedin').attr('href', _individual_org_linkedin);
+        if(_individual_org_linkedin == "")
+            $('._value_v0gc7_56.linkedin').closest('._FieldContainer_13z8k_1').addClass('hidden');
+        else
+            $('._value_v0gc7_56.linkedin').closest('._FieldContainer_13z8k_1').removeClass('hidden');
+
+        $("#content-email-status").parent('div').removeClass('hidden');
+        $("#content-email-status").text("Email " + (added == true ? " added to " : " already in ") + " SalesSeek!!!");
+        $("#content-email-status").parent('div').addClass((added == true ? "alert-success" : "alert-info"));
+
+        setTimeout(function(){
+            $("#content-email-status").parent('div').addClass('hidden');
+        }, 5000);
+        //#3c763d -- added
+        //#31708f -- exists
+    }
+     
 
 })();
