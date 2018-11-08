@@ -703,7 +703,7 @@
             $('._value_v0gc7_56.linkedin').closest('._FieldContainer_13z8k_1').removeClass('hidden');
 
         $("#content-email-status").parent('div').removeClass('hidden');
-        $("#content-email-status").text("Email: " + _emailToSearch + " " + (added == true ? " added to " : " already in ") + " SalesSeek!!!");
+        $("#content-email-status").text("This email linked to " + _emailToSearch + " " + (added == true ? " added to " : " already in ") + " SalesSeek!!!");
         $("#content-email-status").parent('div').addClass((added == true ? "alert-success" : "alert-info"));
 
         setTimeout(function(){
