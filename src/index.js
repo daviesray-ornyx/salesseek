@@ -22,6 +22,9 @@
     var _individual_org_twitter = "";
     var _individual_org_facebook = "";
 
+    var _emailToSearch = "";
+    var _individualDisplayName = "";
+
     var ready_data;
     var re_email = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/ ;
   // The initialize function must be run each time a new page is loaded
@@ -29,8 +32,25 @@
     $(document).ready(function () {
         currentMailItem = Office.context.mailbox.item;  
 
-        $('.content-sender-display-name').text(Office.context.mailbox.item.from.displayName || Office.context.mailbox.item.from.displayName + ", Email: " + Office.context.mailbox.item.from.emailAddress || currentMailItem.to.emailAddress);
         
+        _emailToSearch = (currentMailItem.from.emailAddress== null || currentMailItem.from.emailAddress == Office.context.mailbox.userProfile.emailAddress) ? currentMailItem.to.emailAddress : currentMailItem.from.emailAddress
+        var _interestedInSenderEmail = true;
+        if(currentMailItem.from.emailAddress == Office.context.mailbox.userProfile.emailAddress){
+            // We are interested in to
+            _interestedInSenderEmail = false;
+        }
+
+        if(_interestedInSenderEmail){
+            _emailToSearch = currentMailItem.from.emailAddress;
+            _individualDisplayName = currentMailItem.from.displayName;
+        }else{
+            _emailToSearch = currentMailItem.to[0].emailAddress;
+            _individualDisplayName = currentMailItem.to[0].displayName;
+        }
+        $('.content-sender-display-name').text(_individualDisplayName);
+        
+
+
         // logout
         //logout();
         // Check if settings exist
@@ -73,6 +93,7 @@
         $('#div-authentication-details').removeClass('hidden');
   }
 
+
   function login(client_id, p_email, p_password, p_client_url){
       // Try authentication
       $.ajax(
@@ -91,8 +112,8 @@
             _store.setItem("user_password", p_password);
             _store.setItem("user_client_id", client_id);
             _loggedInUId = data.id;
-            // Set coockie
-            searchByEmail(Office.context.mailbox.item.from.emailAddress || currentMailItem.to.emailAddress);
+           
+            searchByEmail(_emailToSearch);
         },
         error: function(error, status, xhr) {
             // Remove submitting messaging
@@ -423,7 +444,7 @@
         // Get user details..
         var firstName = $('#field-first-name').val();
         var lastName = $('#field-last-name').val();
-        var email_address = currentMailItem.from.emailAddress || currentMailItem.from.emailAddress;
+        var email_address = _emailToSearch;
         var role = $('#field-role').val();
         var data = JSON.stringify({
             "first_name": firstName,
@@ -461,9 +482,9 @@
                 $('#loading-gif-alt').removeClass('hidden');
                 $('#div-add-user-to-crm .detail-section').attr('disabled', false);
 
-                $('#div-add-user-to-crm  .alert-message').text(currentMailItem.from.displayName || currentMailItem.to.displayName  + " successfully added to SalesSleek.");
+                $('#div-add-user-to-crm  .alert-message').text(_individualDisplayName  + " successfully added to SalesSleek.");
 
-                showAlert('success', currentMailItem.from.displayName || currentMailItem.to.displayName + " successfully added to SalesSleek.", 2000, '#div-add-user-to-crm', searchByEmail(currentMailItem.from.emailAddress || currentMailItem.to.emailAddress));
+                showAlert('success', _individualDisplayName + " successfully added to SalesSleek.", 2000, '#div-add-user-to-crm', searchByEmail(_emailToSearch));
             },
             error: function() {
                 // Remove submitting messaging
@@ -471,7 +492,7 @@
                 $('#loading-gif-alt').removeClass('hidden');
                 $('#div-add-user-to-crm .detail-section').attr('disabled', false);
 
-                showAlert('error', "Could not add " + currentMailItem.from.displayName || currentMailItem.to.displayName + " to SalesSleek. Please try again or contact system administrator.", 5000, '#div-add-user-to-crm');
+                showAlert('error', "Could not add " + _individualDisplayName + " to SalesSleek. Please try again or contact system administrator.", 5000, '#div-add-user-to-crm');
             }
         });
 
@@ -529,8 +550,6 @@
                         // Add to sales Seek
                         sendEmailToSalesSeek();
                     }
-
-                    return inSalesSeek
                 },
                 error: function() {
                     // Remove submitting messaging
@@ -546,15 +565,15 @@
         var parsedDate = new Date(dateTimeCreated);
         var dateString = parsedDate.toISOString();
 
-        var _receiverEmail = currentMailItem.to.emailAddress;
-        var _receiverName = currentMailItem.to.displayName;
+        // var _receiverEmail = currentMailItem.to.emailAddress;
+        // var _receiverName = currentMailItem.to.displayName;
         
         var _senderEmail = currentMailItem.from.emailAddress;
-        var _senderName = currentMailItem.from.displayName;
+        // var _senderName = currentMailItem.from.displayName;
 
         var _emailSubject = currentMailItem.subject;
         
-        var _isIncoming = _senderEmail != "";
+        // var _isIncoming = _senderEmail != "";
         var _emailBody = "";
         // Email body
         currentMailItem.body.getAsync(Office.CoercionType.Text, 
@@ -563,24 +582,29 @@
                     // alert message. Error retrieving mail body
                     _emailBody = result.value;
                 }
+                
                 // Ready data start
-
-                ready_data = JSON.stringify({
-                    "note": _emailBody,
-                    "activity_type" : "archive:email",
-                    "individual_id" : _individualId,
-                    "owner_id" : _loggedInUId,
-                    "creator_id": _loggedInUId,
-                    "created" : dateString,
-                    "params": {
-                        "attachment_names": [],
-                        "attachment_ids": [],
-                        "subject": _emailSubject
-                    }
-                });
-
-                //---- End  Ready data
-
+                try{
+                    ready_data = JSON.stringify({
+                        "note": _emailBody,
+                        "activity_type" : "archive:email",
+                        "individual_id" : _individualId,
+                        "related":{
+                            "id": _individualId
+                        },
+                        "owner_id" : _loggedInUId,
+                        "creator_id": _loggedInUId,
+                        "created" : dateString,
+                        "params": {
+                            "attachment_names": [],
+                            "attachment_ids": [],
+                            "subject": _emailSubject
+                        }
+                    });
+                }catch(ex){
+                    $('.logging').text(ex);
+                }
+                
                 // Check if email in salesSeek
                 emailInSalesSeekCheck(dateString, _emailBody);
             }
@@ -679,7 +703,7 @@
             $('._value_v0gc7_56.linkedin').closest('._FieldContainer_13z8k_1').removeClass('hidden');
 
         $("#content-email-status").parent('div').removeClass('hidden');
-        $("#content-email-status").text("Email " + (added == true ? " added to " : " already in ") + " SalesSeek!!!");
+        $("#content-email-status").text("Email: " + _emailToSearch + " " + (added == true ? " added to " : " already in ") + " SalesSeek!!!");
         $("#content-email-status").parent('div').addClass((added == true ? "alert-success" : "alert-info"));
 
         setTimeout(function(){
